@@ -1,0 +1,52 @@
+version: "3.4"
+
+services:
+  postgres:
+    image: postgres:14-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=guest
+      - POSTGRES_PASSWORD=guest
+      - POSTGRES_DB=db-users
+  cadence:
+    image: ubercadence/server:master-auto-setup
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+      - "8002:8002"
+      - "8003:8003"
+      - "7933:7933"
+      - "7934:7934"
+      - "7935:7935"
+      - "7939:7939"
+      - "7833:7833"
+    environment:
+      - "DB=postgres"
+      - "DB_PORT=5432"
+      - "POSTGRES_USER=guest"
+      - "POSTGRES_PWD=guest"
+      - "POSTGRES_SEEDS=postgres"
+      - "DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/development.yaml"
+    depends_on:
+      - postgres
+  cadence-cli:
+    image: ubercadence/cli:master
+    restart: on-failure
+    environment:
+      - "CADENCE_CLI_ADDRESS=cadence:7933"
+    command:
+      - "--do"
+      - seedo
+      - domain
+      - register
+    depends_on:
+      - cadence
+  cadence-web:
+    image: ubercadence/web:latest
+    environment:
+      - "CADENCE_TCHANNEL_PEERS=cadence:7933"
+    ports:
+      - "8088:8088"
+    depends_on:
+      - cadence
